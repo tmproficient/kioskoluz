@@ -20,13 +20,24 @@ export const checkoutSchema = z.object({
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email(),
+  username: z
+    .string()
+    .trim()
+    .min(3)
+    .max(40)
+    .regex(/^[a-zA-Z0-9._-]+$/, "Username invalido"),
   password: z.string().min(6),
   full_name: z.string().trim().min(1),
   role: z.enum(["admin", "seller"])
 });
 
 export const updateUserSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .min(3)
+    .max(40)
+    .regex(/^[a-zA-Z0-9._-]+$/, "Username invalido"),
   full_name: z.string().trim().min(1),
   role: z.enum(["admin", "seller"])
 });

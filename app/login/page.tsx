@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { internalEmailFromUsername } from "@/app/lib/identity";
 import { getBrowserSupabase } from "@/app/lib/supabase/browser";
 
 export default function LoginPage() {
@@ -10,7 +11,7 @@ export default function LoginPage() {
   const next = searchParams.get("next") || "/sale";
   const supabase = getBrowserSupabase();
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,8 +21,9 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    const email = internalEmailFromUsername(username);
     const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email,
       password
     });
 
@@ -41,12 +43,12 @@ export default function LoginPage() {
         <h2>Ingresar</h2>
         <form className="form-grid" onSubmit={onSubmit}>
           <label>
-            Email
+            Usuario
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </label>
           <label>
@@ -67,4 +69,3 @@ export default function LoginPage() {
     </section>
   );
 }
-

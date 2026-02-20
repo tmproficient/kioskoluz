@@ -13,7 +13,7 @@ import type { AppRole } from "@/app/lib/auth";
 
 type AuthUser = {
   id: string;
-  email: string;
+  username: string;
   fullName: string | null;
   role: AppRole;
 };
@@ -46,13 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, role")
+      .select("username, full_name, role")
       .eq("id", authUser.id)
       .single();
 
     setUser({
       id: authUser.id,
-      email: authUser.email ?? "",
+      username: profile?.username ?? (authUser.email?.split("@")[0] ?? ""),
       fullName: profile?.full_name ?? null,
       role: (profile?.role as AppRole) ?? "seller"
     });
@@ -88,4 +88,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-

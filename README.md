@@ -29,17 +29,32 @@ Usa `.env.example`:
 - `SEED_TOKEN`
 - `APP_BASE_URL`
 
-## SQL de seguridad (obligatorio)
+## SQL de seguridad / estructura DB (obligatorio)
 
 1. Abre Supabase SQL Editor.
-2. Ejecuta `supabase/rbac.sql`.
+2. Ejecuta `supabase/migrations/001_init.sql`.
 
 Ese SQL crea:
 - `profiles`
-- funciones `auth_role()`, `is_admin()`, `is_seller()`
+- `products`, `sales`, `sale_items`
+- funciones `current_role()`, `is_admin()`, `is_seller()`
 - trigger para auto-crear profile al registrar usuario
+- trigger `updated_at` para tablas principales
 - RLS + policies para `profiles`, `products`, `sales`, `sale_items`
-- RPC `create_sale(...)` y `get_dashboard_data()`
+- vista `low_stock_products` (stock <= 3)
+
+## Migraciones por script (db:init)
+
+Tambien puedes ejecutar la migracion con Node:
+
+```bash
+SUPABASE_DB_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" npm run db:init
+```
+
+`db:init`:
+- ejecuta `supabase/migrations/001_init.sql`
+- muestra logs de exito/fallo
+- valida tablas creadas al final (`profiles`, `products`, `sales`, `sale_items`)
 
 ## Correr local
 
@@ -52,7 +67,7 @@ npm run dev
 
 ### Opcion A (manual)
 
-1. Registra un usuario en `/login` (o via dashboard de Supabase Auth).
+1. Registra un usuario en `/login` (usuario + password, sin email visible) o via dashboard de Supabase Auth.
 2. En SQL Editor ejecuta:
 
 ```sql
@@ -79,7 +94,7 @@ Si aun no existe ningun admin:
 curl -X POST https://kioskoluz.onrender.com/api/admin/bootstrap \
   -H "Content-Type: application/json" \
   -H "x-seed-token: TU_SEED_TOKEN" \
-  -d "{\"email\":\"luz@kioskoluz.com\",\"password\":\"salsera26\",\"full_name\":\"Luz\"}"
+  -d "{\"username\":\"luz\",\"password\":\"salsera26\",\"full_name\":\"Luz\"}"
 ```
 
 Reglas:
@@ -93,7 +108,7 @@ UI: `/users`
 Backend: `POST /api/admin/create-user`
 - protegido por rol admin
 - usa `SUPABASE_SERVICE_ROLE_KEY`
-- crea usuario en Supabase Auth y profile con rol
+- crea usuario en Supabase Auth con email interno `${username}@kiosco.local` y profile con rol
 
 ## Seed demo (opcional)
 

@@ -37,7 +37,7 @@ export function TopNav() {
             {link.label}
           </Link>
         ))}
-        {user ? <span className="user-pill">{user.fullName || user.email}</span> : null}
+        {user ? <span className="user-pill">{user.fullName || user.username}</span> : null}
         {user ? (
           <button
             className="secondary"

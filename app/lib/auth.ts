@@ -4,7 +4,7 @@ export type AppRole = "admin" | "seller";
 
 export type AuthProfile = {
   id: string;
-  email: string;
+  username: string;
   full_name: string | null;
   role: AppRole;
 };
@@ -20,7 +20,7 @@ export async function getAuthProfile(): Promise<AuthProfile | null> {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, role")
+    .select("id, username, full_name, role")
     .eq("id", user.id)
     .single();
 
@@ -28,7 +28,7 @@ export async function getAuthProfile(): Promise<AuthProfile | null> {
 
   return {
     id: user.id,
-    email: user.email ?? "",
+    username: profile.username,
     full_name: profile.full_name,
     role: profile.role as AppRole
   };
@@ -40,4 +40,3 @@ export async function requireAuthProfile(requiredRole?: AppRole) {
   if (requiredRole && profile.role !== requiredRole) throw new Error("FORBIDDEN");
   return profile;
 }
-

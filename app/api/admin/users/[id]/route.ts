@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { internalEmailFromUsername, normalizeUsername } from "@/app/lib/identity";
 import { requireAuthProfile } from "@/app/lib/auth";
 import { fail, ok } from "@/app/lib/http";
 import { getServiceSupabase } from "@/app/lib/supabase/service";
@@ -14,14 +15,26 @@ export async function PATCH(
     const payload = await request.json();
     const parsed = updateUserSchema.parse(payload);
     const serviceSupabase = getServiceSupabase();
+    const username = normalizeUsername(parsed.username);
+
+    const { data: existingProfile, error: existingError } = await (serviceSupabase
+      .from("profiles") as any)
+      .select("id")
+      .eq("username", username)
+      .neq("id", id)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existingProfile) throw new Error("Username ya existe");
 
     const { error: authError } = await serviceSupabase.auth.admin.updateUserById(id, {
-      user_metadata: { full_name: parsed.full_name }
+      email: internalEmailFromUsername(username),
+      user_metadata: { full_name: parsed.full_name, username }
     });
     if (authError) throw authError;
 
     const { error: profileError } = await (serviceSupabase.from("profiles") as any).upsert({
       id,
+      username,
       full_name: parsed.full_name,
       role: parsed.role
     });
@@ -59,4 +72,3 @@ export async function DELETE(
     return fail(error, 400);
   }
 }
-

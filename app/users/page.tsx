@@ -5,19 +5,22 @@ import { formatDateTime } from "@/app/lib/format";
 
 type AdminUser = {
   id: string;
-  email: string;
+  username: string;
   full_name: string;
   role: "admin" | "seller";
   created_at: string;
   last_sign_in_at: string | null;
 };
 
-type EditMap = Record<string, { full_name: string; role: "admin" | "seller" }>;
+type EditMap = Record<
+  string,
+  { username: string; full_name: string; role: "admin" | "seller" }
+>;
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [edits, setEdits] = useState<EditMap>({});
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"admin" | "seller">("seller");
@@ -32,7 +35,11 @@ export default function UsersPage() {
     setUsers(json);
     const nextEdits: EditMap = {};
     for (const u of json as AdminUser[]) {
-      nextEdits[u.id] = { full_name: u.full_name ?? "", role: u.role };
+      nextEdits[u.id] = {
+        username: u.username ?? "",
+        full_name: u.full_name ?? "",
+        role: u.role
+      };
     }
     setEdits(nextEdits);
   };
@@ -51,7 +58,7 @@ export default function UsersPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: email.trim(),
+        username: username.trim(),
         password,
         full_name: fullName.trim(),
         role
@@ -64,7 +71,7 @@ export default function UsersPage() {
       return;
     }
 
-    setEmail("");
+    setUsername("");
     setPassword("");
     setFullName("");
     setRole("seller");
@@ -143,17 +150,17 @@ export default function UsersPage() {
         <form className="card form-grid" onSubmit={createUser}>
           <h3>Crear usuario</h3>
           <label>
-            Nombre completo
-            <input required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            Usuario
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </label>
           <label>
-            Email
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            Nombre completo
+            <input required value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </label>
           <label>
             Password
@@ -182,8 +189,8 @@ export default function UsersPage() {
           <table className="table">
             <thead>
               <tr>
+                <th>Usuario</th>
                 <th>Nombre</th>
-                <th>Email</th>
                 <th>Rol</th>
                 <th>Alta</th>
                 <th>Ultimo acceso</th>
@@ -200,6 +207,17 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td>
                       <input
+                        value={edits[u.id]?.username ?? ""}
+                        onChange={(e) =>
+                          setEdits((prev) => ({
+                            ...prev,
+                            [u.id]: { ...prev[u.id], username: e.target.value }
+                          }))
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
                         value={edits[u.id]?.full_name ?? ""}
                         onChange={(e) =>
                           setEdits((prev) => ({
@@ -209,7 +227,6 @@ export default function UsersPage() {
                         }
                       />
                     </td>
-                    <td>{u.email}</td>
                     <td>
                       <div className="role-cell">
                         <span className={`role-badge ${u.role === "admin" ? "role-admin" : "role-seller"}`}>

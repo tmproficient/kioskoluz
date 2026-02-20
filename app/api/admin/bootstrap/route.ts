@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { internalEmailFromUsername, normalizeUsername } from "@/app/lib/identity";
 import { fail, ok } from "@/app/lib/http";
 import { getServiceSupabase } from "@/app/lib/supabase/service";
 
@@ -10,13 +11,15 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = await request.json().catch(() => ({}));
-    const email = (payload?.email as string | undefined)?.trim();
+    const rawUsername = (payload?.username as string | undefined)?.trim();
     const password = payload?.password as string | undefined;
     const fullName = ((payload?.full_name as string | undefined) ?? "Luz").trim();
 
-    if (!email || !password || password.length < 6) {
-      return fail(new Error("email/password invalidos"), 400);
+    if (!rawUsername || !password || password.length < 6) {
+      return fail(new Error("username/password invalidos"), 400);
     }
+    const username = normalizeUsername(rawUsername);
+    const email = internalEmailFromUsername(username);
 
     const serviceSupabase = getServiceSupabase();
 
@@ -33,12 +36,13 @@ export async function POST(request: NextRequest) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName }
+      user_metadata: { full_name: fullName, username }
     });
     if (error || !data.user) throw error ?? new Error("No se pudo crear admin");
 
     const { error: profileError } = await (serviceSupabase.from("profiles") as any).upsert({
       id: data.user.id,
+      username,
       full_name: fullName,
       role: "admin"
     });
@@ -46,10 +50,9 @@ export async function POST(request: NextRequest) {
 
     return ok({
       success: true,
-      user: { id: data.user.id, email: data.user.email, role: "admin" }
+      user: { id: data.user.id, username, role: "admin" }
     });
   } catch (error) {
     return fail(error, 400);
   }
 }
-

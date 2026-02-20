@@ -4,7 +4,7 @@ import { getServiceSupabase } from "@/app/lib/supabase/service";
 
 type AdminUserRow = {
   id: string;
-  email: string;
+  username: string;
   full_name: string;
   role: "admin" | "seller";
   created_at: string;
@@ -25,12 +25,15 @@ export async function GET() {
 
     const users = usersData.users ?? [];
     const ids = users.map((u) => u.id);
-    let profilesMap = new Map<string, { full_name: string; role: "admin" | "seller" }>();
+    let profilesMap = new Map<
+      string,
+      { username: string; full_name: string; role: "admin" | "seller" }
+    >();
 
     if (ids.length > 0) {
       const { data: profiles, error: profilesError } = await (serviceSupabase
         .from("profiles") as any)
-        .select("id, full_name, role")
+        .select("id, username, full_name, role")
         .in("id", ids);
       if (profilesError) throw profilesError;
 
@@ -38,6 +41,7 @@ export async function GET() {
         (profiles ?? []).map((p: any) => [
           p.id,
           {
+            username: p.username ?? "",
             full_name: p.full_name ?? "",
             role: (p.role ?? "seller") as "admin" | "seller"
           }
@@ -49,7 +53,7 @@ export async function GET() {
       const p = profilesMap.get(u.id);
       return {
         id: u.id,
-        email: u.email ?? "",
+        username: p?.username ?? ((u.email ?? "").split("@")[0] || ""),
         full_name: p?.full_name ?? ((u.user_metadata?.full_name as string | undefined) ?? ""),
         role: p?.role ?? "seller",
         created_at: u.created_at,

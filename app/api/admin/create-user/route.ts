@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { internalEmailFromUsername, normalizeUsername } from "@/app/lib/identity";
 import { requireAuthProfile } from "@/app/lib/auth";
 import { fail, ok } from "@/app/lib/http";
 import { getServiceSupabase } from "@/app/lib/supabase/service";
@@ -10,17 +11,28 @@ export async function POST(request: NextRequest) {
     const serviceSupabase = getServiceSupabase();
     const payload = await request.json();
     const parsed = createUserSchema.parse(payload);
+    const username = normalizeUsername(parsed.username);
+    const email = internalEmailFromUsername(username);
+
+    const { data: existingProfile, error: existingError } = await (serviceSupabase
+      .from("profiles") as any)
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existingProfile) throw new Error("Username ya existe");
 
     const { data, error } = await serviceSupabase.auth.admin.createUser({
-      email: parsed.email,
+      email,
       password: parsed.password,
       email_confirm: true,
-      user_metadata: { full_name: parsed.full_name }
+      user_metadata: { full_name: parsed.full_name, username }
     });
     if (error || !data.user) throw error ?? new Error("No se pudo crear usuario");
 
     const { error: profileError } = await (serviceSupabase.from("profiles") as any).upsert({
       id: data.user.id,
+      username,
       full_name: parsed.full_name,
       role: parsed.role
     });
@@ -29,7 +41,7 @@ export async function POST(request: NextRequest) {
     return ok({
       user: {
         id: data.user.id,
-        email: data.user.email,
+        username,
         role: parsed.role
       }
     });

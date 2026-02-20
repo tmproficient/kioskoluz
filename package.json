@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "db:init": "node scripts/apply-migrations.js",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "jsbarcode": "^3.12.1",
     "next": "15.2.4",
+    "pg": "^8.13.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "zod": "^3.24.2"
