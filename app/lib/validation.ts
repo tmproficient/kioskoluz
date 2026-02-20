@@ -25,3 +25,8 @@ export const createUserSchema = z.object({
   full_name: z.string().trim().min(1),
   role: z.enum(["admin", "seller"])
 });
+
+export const updateUserSchema = z.object({
+  full_name: z.string().trim().min(1),
+  role: z.enum(["admin", "seller"])
+});
