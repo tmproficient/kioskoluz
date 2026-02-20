@@ -92,7 +92,7 @@ button.small { font-size: 12px; padding: 5px 10px; }
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .sale-entry { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .manual-add { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; }
-.checkout-footer { margin-top: 12px; display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.checkout-footer { margin-top: 12px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .qty-input { width: 90px; }
 .error { color: #b91c1c; margin: 0; }
 .success { color: #065f46; margin: 0; }
