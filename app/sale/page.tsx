@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCurrency } from "@/app/lib/format";
 import type { Product } from "@/app/lib/types";
+import { getBrowserSupabase } from "@/app/lib/supabase/browser";
 
 type CartItem = {
   product: Product;
@@ -10,6 +11,7 @@ type CartItem = {
 };
 
 export default function SalePage() {
+  const supabase = getBrowserSupabase();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -98,14 +100,30 @@ export default function SalePage() {
       return;
     }
 
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      setError("Sesion expirada. Volve a iniciar sesion.");
+      return;
+    }
+
     const res = await fetch("/api/sales/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
       body: JSON.stringify({ items, paymentMethod })
     });
     const json = await res.json();
     if (!res.ok) {
-      setError(json.error || "Error en cobro");
+      setError(
+        json?.message
+          ? `${json.message}${json.step ? ` (paso: ${json.step})` : ""}`
+          : "Error en cobro"
+      );
       return;
     }
     setCart({});
@@ -216,4 +234,3 @@ export default function SalePage() {
     </section>
   );
 }
-
