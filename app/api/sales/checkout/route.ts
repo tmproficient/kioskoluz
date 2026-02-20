@@ -1,15 +1,25 @@
 import { NextRequest } from "next/server";
-import { checkoutSale } from "@/app/lib/db";
+import { requireAuthProfile } from "@/app/lib/auth";
 import { fail, ok } from "@/app/lib/http";
+import { getServerSupabase } from "@/app/lib/supabase/server";
 import { checkoutSchema } from "@/app/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuthProfile();
     const payload = await request.json();
     const parsed = checkoutSchema.parse(payload);
-    const result = await checkoutSale(parsed);
+
+    const supabase = await getServerSupabase();
+    const { data: result, error } = await supabase.rpc("create_sale", {
+      p_items: parsed.items,
+      p_payment_method: parsed.paymentMethod
+    });
+
+    if (error) throw error;
     return ok(result, 201);
   } catch (error) {
-    return fail(error, 400);
+    const msg = (error as Error).message;
+    return fail(error, msg === "UNAUTHORIZED" ? 401 : 400);
   }
 }

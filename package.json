@@ -1,8 +1,8 @@
 {
-  "name": "kiosko-cloud",
+  "name": "megakiosco-ohana",
   "version": "1.0.0",
   "private": true,
-  "description": "Kiosko POS cloud (Render + Supabase)",
+  "description": "Megakiosco Ohana POS cloud (Render + Supabase)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,12 +11,12 @@
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.49.4",
     "jsbarcode": "^3.12.1",
     "next": "15.2.4",
-    "postgres": "^3.4.5",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

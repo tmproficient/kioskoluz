@@ -7,7 +7,13 @@ services:
     startCommand: npm run start
     autoDeploy: true
     envVars:
-      - key: DATABASE_URL
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: SEED_TOKEN
         sync: false
+      - key: APP_BASE_URL
+        value: https://kiosko-pos-cloud.onrender.com

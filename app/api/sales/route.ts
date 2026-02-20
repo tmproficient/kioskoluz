@@ -4,15 +4,18 @@ import { getServerSupabase } from "@/app/lib/supabase/server";
 
 export async function GET() {
   try {
-    await requireAuthProfile("admin");
+    await requireAuthProfile();
     const supabase = await getServerSupabase();
-    const { data, error } = await supabase.rpc("get_dashboard_data");
+    const { data, error } = await supabase
+      .from("sales")
+      .select("id, created_at, total, payment_method, created_by")
+      .order("created_at", { ascending: false })
+      .limit(50);
     if (error) throw error;
     return ok(data);
   } catch (error) {
     const msg = (error as Error).message;
-    if (msg === "UNAUTHORIZED") return fail(error, 401);
-    if (msg === "FORBIDDEN") return fail(error, 403);
-    return fail(error, 500);
+    return fail(error, msg === "UNAUTHORIZED" ? 401 : 500);
   }
 }
+

@@ -18,3 +18,10 @@ export const checkoutSchema = z.object({
     .min(1),
   paymentMethod: z.enum(["CASH", "MERCADO_PAGO"]).default("CASH")
 });
+
+export const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  full_name: z.string().trim().min(1),
+  role: z.enum(["admin", "seller"])
+});

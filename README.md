@@ -1,67 +1,86 @@
-# Kiosko POS Cloud (Render + Supabase)
+# Megakiosco Ohana (Render + Supabase)
 
-Sistema POS + inventario minimo para kiosko, pensado para usar desde navegador (sin depender de una PC local fija).
+POS + inventario con autenticacion Supabase Auth y RBAC (admin/seller).
 
 ## Stack
 
 - Next.js 15 + TypeScript
-- Supabase Postgres (persistencia cloud)
-- Deploy en Render (Web Service)
+- Supabase Auth + Postgres + RLS
+- Render (Web Service)
 
-## MVP Fase 1 incluido
+## Roles
 
-- CRUD de productos (id UUID, nombre, precio, stock, barcode unico)
-- Barcode autogenerado al crear producto
-- Etiquetas imprimibles (A4 configurable) con nombre, precio, codigo y barcode CODE-128
-- Venta rapida por escaner (input con foco), carrito, edicion de cantidades y cobro
-- Descuento de stock al cobrar
-- Alertas de stock bajo (<= 3)
-- Dashboard: ventas hoy/semana/mes, total de ventas, ticket promedio, top productos, ultimas ventas
-- Datos demo (seed)
+- `admin`
+- `seller`
 
-## Preparado para Fase 2
+Permisos implementados:
+- `/dashboard`: solo `admin`
+- `/sales`: solo `admin` (listado + detalle)
+- `/users`: solo `admin` (crear usuarios + rol)
+- `/products`, `/sale`, `/labels`, `/alerts`: `admin` y `seller`
 
-- Seleccion de metodo de pago en checkout: `Efectivo / Mercado Pago`
-- Campo `payment_method` guardado en ventas
+## Variables de entorno
 
-## Requisitos
+Usa `.env.example`:
 
-- Node 20 LTS recomendado
-- Cuenta en Supabase
-- Cuenta en Render
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (solo backend)
+- `SEED_TOKEN`
+- `APP_BASE_URL`
 
-## Configuracion local
+## SQL de seguridad (obligatorio)
 
-1. Copia variables:
+1. Abre Supabase SQL Editor.
+2. Ejecuta `supabase/rbac.sql`.
 
-```bash
-cp .env.example .env.local
-```
+Ese SQL crea:
+- `profiles`
+- funciones `auth_role()`, `is_admin()`, `is_seller()`
+- trigger para auto-crear profile al registrar usuario
+- RLS + policies para `profiles`, `products`, `sales`, `sale_items`
+- RPC `create_sale(...)` y `get_dashboard_data()`
 
-2. Define variables:
-
-- `DATABASE_URL`: connection string de Supabase (pooler recomendado)
-- `SEED_TOKEN`: token secreto para endpoint de seed
-
-3. Instala y ejecuta:
+## Correr local
 
 ```bash
 npm install
 npm run dev
 ```
 
-App en: `http://localhost:3000`
+## Bootstrap del primer admin
 
-## Base de datos (Supabase)
+### Opcion A (manual)
 
-### Opcion A (recomendada)
+1. Registra un usuario en `/login` (o via dashboard de Supabase Auth).
+2. En SQL Editor ejecuta:
 
-- Abre Supabase SQL Editor
-- Ejecuta `supabase/schema.sql`
+```sql
+update public.profiles
+set role = 'admin'
+where id = 'UUID_DEL_USUARIO';
+```
 
-### Opcion B
+### Opcion B (SQL directo por email)
 
-- Usa endpoint de seed (crea tablas + demo):
+```sql
+update public.profiles p
+set role = 'admin'
+from auth.users u
+where u.id = p.id
+  and u.email = 'tu-admin@correo.com';
+```
+
+## Crear usuarios desde app (solo admin)
+
+UI: `/users`
+
+Backend: `POST /api/admin/create-user`
+- protegido por rol admin
+- usa `SUPABASE_SERVICE_ROLE_KEY`
+- crea usuario en Supabase Auth y profile con rol
+
+## Seed demo (opcional)
 
 ```bash
 curl -X POST http://localhost:3000/api/seed -H "x-seed-token: TU_SEED_TOKEN"
@@ -69,30 +88,28 @@ curl -X POST http://localhost:3000/api/seed -H "x-seed-token: TU_SEED_TOKEN"
 
 ## Deploy en Render
 
-1. Sube este repo a GitHub.
-2. En Render: **New + > Web Service**.
-3. Conecta el repo.
-4. Render detecta `render.yaml` (o configura manual):
-- Build Command: `npm install && npm run build`
-- Start Command: `npm run start`
-5. Agrega variables en Render:
-- `DATABASE_URL`
-- `SEED_TOKEN`
+1. Push del repo a GitHub.
+2. Crear Web Service en Render.
+3. Build: `npm install && npm run build`
+4. Start: `npm run start`
+5. Configurar env vars de `.env.example`.
 6. Deploy.
 
-## Uso de lector de codigos
+## Checklist manual de permisos
 
-- Conecta lector USB modo teclado (HID).
-- Ve a `Venta rapida`.
-- Escanea en el input y Enter.
+1. Usuario `seller`:
+- entra a `/products`, `/sale`, `/labels`, `/alerts` OK
+- `/dashboard`, `/sales`, `/users` bloqueado
+- puede crear/editar productos
+- puede registrar ventas
+- no puede borrar productos (RLS)
 
-## Endpoints principales
+2. Usuario `admin`:
+- acceso total a `/dashboard`, `/sales`, `/users`
+- puede crear usuario seller/admin
+- puede eliminar productos
 
-- `GET /api/products`
-- `POST /api/products`
-- `PATCH /api/products/:id`
-- `DELETE /api/products/:id`
-- `GET /api/products/barcode/:barcode`
-- `POST /api/sales/checkout`
-- `GET /api/dashboard`
-- `POST /api/seed` (protegido por `x-seed-token`)
+3. Seguridad backend:
+- sin sesion: APIs responden 401
+- seller en endpoints admin: 403
+- policies RLS activas en Supabase
