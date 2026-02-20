@@ -71,6 +71,21 @@ where u.id = p.id
   and u.email = 'tu-admin@correo.com';
 ```
 
+### Opcion C (recomendada, endpoint bootstrap)
+
+Si aun no existe ningun admin:
+
+```bash
+curl -X POST https://kioskoluz.onrender.com/api/admin/bootstrap \
+  -H "Content-Type: application/json" \
+  -H "x-seed-token: TU_SEED_TOKEN" \
+  -d "{\"email\":\"luz@kioskoluz.com\",\"password\":\"salsera26\",\"full_name\":\"Luz\"}"
+```
+
+Reglas:
+- Solo funciona si no hay admins creados.
+- Requiere `SEED_TOKEN`.
+
 ## Crear usuarios desde app (solo admin)
 
 UI: `/users`
